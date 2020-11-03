@@ -68,6 +68,7 @@ export default {
       { title: "Home", value: "home", icon: "mdi-home-city" },
       { title: "Calendar", value: "calendar", icon: "mdi-calendar" },
       { title: "Recipes", value: "recipes", icon: "mdi-food-apple-outline" },
+      { title: "Tasks", value: "tasks", icon: "mdi-calendar-check-outline" },
     ],
     mini: true,
   }),
