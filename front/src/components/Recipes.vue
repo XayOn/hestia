@@ -10,10 +10,7 @@
         <v-card class="mx-auto" tile>
           <v-list three-line>
             <template v-for="(item, position) in recipes">
-              <v-list-item
-                v-on:click="selectRecipe(position)"
-                :key="position"
-              >
+              <v-list-item v-on:click="selectRecipe(position)" :key="position">
                 <v-list-item-avatar>
                   <v-img :src="item.image"></v-img>
                 </v-list-item-avatar>
@@ -29,28 +26,6 @@
                     v-html="item.description"
                   ></v-list-item-subtitle>
                 </v-list-item-content>
-
-                <v-list-item-action>
-                  <v-tooltip bottom>
-                    <template v-slot:activator="{ on, attrs }">
-                      <v-btn color="primary" dark icon v-bind="attrs" v-on="on">
-                        <v-icon>mdi-pencil-outline</v-icon>
-                      </v-btn>
-                    </template>
-                    <span>Edit</span>
-                  </v-tooltip>
-                </v-list-item-action>
-
-                <v-list-item-action>
-                  <v-tooltip bottom>
-                    <template v-slot:activator="{ on, attrs }">
-                      <v-btn color="primary" dark icon v-bind="attrs" v-on="on">
-                        <v-icon>mdi-calendar</v-icon>
-                      </v-btn>
-                    </template>
-                    <span>Add to meal plan</span>
-                  </v-tooltip>
-                </v-list-item-action>
               </v-list-item>
             </template>
           </v-list>
@@ -60,62 +35,169 @@
       <v-col cols="8">
         <v-card class="mx-auto" v-if="selected">
           <v-img height="250" :src="selected.image"></v-img>
-          <v-card-title v-html="selected.title"></v-card-title>
+          <v-card-title v-if="!edit" v-html="selected.title"></v-card-title>
+
+          <v-card-title v-if="edit">
+            <v-text-field
+              v-model="selected.title"
+              outlined
+              clearable
+              label="Title"
+              type="text"
+            ></v-text-field>
+          </v-card-title>
 
           <v-col cols="8" offset="2">
-            <v-list class="mx-15" three-line>
-              <template v-for="item in selected.ingredients">
-                <v-list-item :key="item.name">
-                  <v-list-item-avatar>
-                    <v-img :src="item.image"></v-img>
-                  </v-list-item-avatar>
+            <v-card>
+              <v-fab-transition>
+                <v-btn
+                  v-show="edit"
+                  v-on:click="addIngredient()"
+                  color="pink"
+                  dark
+                  absolute
+                  top
+                  right
+                  fab
+                >
+                  <v-icon>mdi-plus</v-icon>
+                </v-btn>
+              </v-fab-transition>
+              <v-list class="mx-15" three-line>
+                <v-subheader>Ingredients</v-subheader>
+                <template v-for="(item, num) in selected.ingredients">
+                  <v-list-item :key="num">
+                    <v-list-item-avatar>
+                      <v-img
+                        :src="item.image"
+                        v-on:click="changeIngredientImage(num)"
+                      ></v-img>
+                    </v-list-item-avatar>
 
-                  <v-list-item-content>
-                    <v-list-item-title>
-                      <span v-html="item.name"></span> &mdash;
+                    <v-list-item-content v-if="!edit">
+                      <v-list-item-title>
+                        <span v-html="item.name"></span>
 
-                      <span
-                        class="text--secondary text-overline"
-                        v-html="item.quantity"
-                      ></span>
+                        &mdash;
 
-                      <span
-                        class="text--secondary text-overline"
-                        v-html="item.unit"
-                      ></span>
-                    </v-list-item-title>
-                    <v-list-item-subtitle
-                      v-html="item.description"
-                    ></v-list-item-subtitle>
-                  </v-list-item-content>
+                        <span
+                          class="text--secondary text-overline"
+                          v-html="item.quantity"
+                        ></span>
 
-                  <v-list-item-action>
-                    <v-tooltip bottom>
-                      <template v-slot:activator="{ on, attrs }">
-                        <v-btn
-                          color="primary"
-                          dark
-                          icon
-                          v-bind="attrs"
-                          v-on="on"
-                        >
-                          <v-icon v-if="item.stock">mdi-cart</v-icon>
-                          <v-icon v-if="!item.stock">mdi-cart-off</v-icon>
-                        </v-btn>
-                      </template>
-                      <span v-if="item.stock">Enough in stock</span>
-                      <span v-if="!item.stock">Not enough in stock</span>
-                    </v-tooltip>
-                  </v-list-item-action>
-                </v-list-item>
-              </template>
-            </v-list>
+                        <span
+                          class="text--secondary text-overline"
+                          v-html="item.unit"
+                        ></span>
+                      </v-list-item-title>
+
+                      <v-list-item-subtitle
+                        v-html="item.description"
+                      ></v-list-item-subtitle>
+                    </v-list-item-content>
+
+                    <v-list-item-content v-if="edit">
+                      <v-list-item-subtitle>
+                        <v-row>
+                          <v-col cols="6">
+                            <v-text-field
+                              v-if="edit"
+                              v-model="item.name"
+                              label="Name"
+                            >
+                            </v-text-field>
+                          </v-col>
+                        </v-row>
+                        <v-row>
+                          <v-col cols="6">
+                            <v-text-field
+                              v-if="edit"
+                              v-model="item.quantity"
+                              color="blue darken-2"
+                              label="Quantity"
+                            >
+                            </v-text-field>
+                          </v-col>
+
+                          <v-col cols="6">
+                            <v-text-field
+                              v-if="edit"
+                              v-model="item.unit"
+                              label="Unit name"
+                            >
+                            </v-text-field>
+                          </v-col>
+                        </v-row>
+
+                        <v-row>
+                          <v-col cols="12">
+                            <v-text-field
+                              v-if="edit"
+                              v-model="item.description"
+                              label="Description"
+                            >
+                            </v-text-field>
+                          </v-col>
+                        </v-row>
+                      </v-list-item-subtitle>
+                    </v-list-item-content>
+
+                    <v-list-item-action>
+                      <v-tooltip bottom>
+                        <template v-slot:activator="{ on, attrs }">
+                          <v-btn
+                            v-if="edit"
+                            color="pink"
+                            dark
+                            icon
+                            v-bind="attrs"
+                            v-on="on"
+                            v-on:click="removeIngredient(num)"
+                          >
+                            <v-icon>mdi-minus-circle</v-icon>
+                          </v-btn>
+                        </template>
+
+                        <span>Remove ingredient</span>
+                      </v-tooltip>
+                    </v-list-item-action>
+                  </v-list-item>
+                </template>
+              </v-list>
+            </v-card>
           </v-col>
 
           <v-card-text>
-            <span class="text--secondary" v-html="selected.total_time"></span
-            >&mdash;
-            <span v-html="selected.description"></span>
+            <div v-if="!edit">
+              <span class="text--secondary" v-html="selected.total_time"></span>
+              &mdash;
+              <span class="text--primary" v-html="selected.description"></span>
+            </div>
+
+            <v-row>
+              <v-col cols="2">
+                <v-text-field
+                  v-if="edit"
+                  v-model="selected.total_time"
+                  outlined
+                  clearable
+                  label="Total time"
+                  type="text"
+                >
+                </v-text-field>
+              </v-col>
+              <v-col cols="10">
+                <v-text-field
+                  v-if="edit"
+                  v-model="selected.description"
+                  outlined
+                  clearable
+                  label="Description"
+                  type="text"
+                >
+                </v-text-field>
+              </v-col>
+            </v-row>
           </v-card-text>
 
           <v-timeline>
@@ -142,11 +224,12 @@
                   v-if="i == selectedAlarm"
                   :size="80"
                   :rotate="180"
-                  :width=8
+                  :width="8"
                   class="mx-5"
-                  color=purple
+                  color="purple"
                   :value="currentTimer"
-                >{{step.time}}m</v-progress-circular>
+                  >{{ step.time }}m</v-progress-circular
+                >
 
                 <v-tooltip
                   v-if="i != selectedAlarm && i == selectedStep"
@@ -196,7 +279,10 @@
                 <v-col
                   offset="4"
                   cols="1"
-                  v-if="i == selectedStep && selectedStep != (selected.steps.length - 1)"
+                  v-if="
+                    i == selectedStep &&
+                    selectedStep != selected.steps.length - 1
+                  "
                   v-on:click="
                     selectedStep++;
                     selectedAlarm = null;
@@ -209,11 +295,45 @@
               </div>
             </v-timeline-item>
           </v-timeline>
-
-          <v-card-title>Next scheduled meals</v-card-title>
-          <v-card-text :key="date.date" v-for="date in selected.scheduled">
-            <v-chip v-text="date.date"></v-chip>
-          </v-card-text>
+          <div v-if="selected & !edit">
+            <v-card-title>Next scheduled meals</v-card-title>
+            <v-card-text :key="date.date" v-for="date in selected.scheduled">
+              <v-chip v-text="date.date"></v-chip>
+            </v-card-text>
+          </div>
+          <v-row v-if="edit" style="margin-top: 20px; margin-bottom: -45px">
+            <v-col cols="2" offset="5">
+              <v-btn class="mx-3" v-on:click="save()" color="primary">
+                Save
+              </v-btn>
+            </v-col>
+          </v-row>
+          <div style="width: 55px">
+            <v-speed-dial
+              v-model="fab"
+              :bottom="true"
+              :right="true"
+              :left="false"
+              :top="false"
+              direction="top"
+              :open-on-hover="false"
+              transition="slide-y-reverse"
+              style="width: 55px"
+            >
+              <template v-slot:activator>
+                <v-btn v-model="fab" color="blue darken-2" dark fab>
+                  <v-icon v-if="fab">mdi-close</v-icon>
+                  <v-icon v-else>mdi-account-circle</v-icon>
+                </v-btn>
+              </template>
+              <v-btn v-on:click="edit = true" fab dark small color="green">
+                <v-icon>mdi-pencil</v-icon>
+              </v-btn>
+              <v-btn fab dark small v-on:click="sheet = true" color="red">
+                <v-icon>mdi-delete</v-icon>
+              </v-btn>
+            </v-speed-dial>
+          </div>
         </v-card>
       </v-col>
     </v-row>
@@ -227,6 +347,20 @@
           </v-btn>
         </template>
       </v-snackbar>
+    </div>
+
+    <div class="text-center">
+      <v-bottom-sheet v-model="sheet" persistent>
+        <v-sheet class="text-center" height="200px">
+          <v-btn class="mt-6" text color="accent" @click="sheet = false">
+            cancel
+          </v-btn>
+          <v-btn class="mt-6" text color="error" @click="deleteRecipe()">
+            delete
+          </v-btn>
+          <div class="py-3">Confirm recipe deletion</div>
+        </v-sheet>
+      </v-bottom-sheet>
     </div>
   </v-container>
 </template>
@@ -245,8 +379,30 @@ export default {
   },
 
   methods: {
-    selectRecipe: function (position) {
+    save: function () {
+      console.log(this.selected);
+      this.edit = false;
+    },
+    changeIngredientImage: function (num) {
+      console.log(this.selected.ingredients[num]);
+      if (!this.edit) {
+        return;
+      }
+    },
+    addIngredient: function () {
+      this.selected.ingredients.push({
+        name: "",
+        description: "",
+        quantity: "",
+        unit: "",
+        image: "",
+      });
+    },
+    selectRecipe: function (position, edit) {
       this.selected = this.recipes[position];
+      if (edit) {
+        this.edit = true;
+      }
     },
     updateTimer: function () {
       console.log(this.currentTimer);
@@ -262,11 +418,20 @@ export default {
       this.currentStep = 100 / this.selected.steps[this.selectedAlarm].time;
       setTimeout(this.updateTimer, 60 * 1000);
     },
+    deleteRecipe: function () {
+      this.sheet = false;
+    },
+    removeIngredient: function (ingredient) {
+      this.selected.ingredients.splice(ingredient, 1);
+    },
   },
 
   data: () => {
     return {
+      sheet: false,
+      edit: false,
       timerAlert: null,
+      fab: false,
       selectedAlarm: null,
       currentStep: 1,
       currentTimer: 0,
@@ -279,7 +444,7 @@ export default {
             "https://upload.wikimedia.org/wikipedia/commons/thumb/7/77/Fabada_en_cazuela_de_barro.jpg/1200px-Fabada_en_cazuela_de_barro.jpg",
           title: "Fabada",
           kind: "Legumbre",
-          description: `<span class=text--primary>Receta sencilla de fabada asturiana.</span>`,
+          description: `Receta sencilla de fabada asturiana.`,
           scheduled: [{ date: "2020-01-01 15:00" }],
           total_time: "10m",
           ingredients: [
@@ -324,7 +489,7 @@ export default {
             "https://upload.wikimedia.org/wikipedia/commons/thumb/7/77/Fabada_en_cazuela_de_barro.jpg/1200px-Fabada_en_cazuela_de_barro.jpg",
           title: "Fabada",
           kind: "Legumbre",
-          description: `<span class=text--primary>blah, blah</span>`,
+          description: "blah, blah",
         },
         {
           id: 2,
@@ -332,10 +497,15 @@ export default {
             "https://upload.wikimedia.org/wikipedia/commons/thumb/7/77/Fabada_en_cazuela_de_barro.jpg/1200px-Fabada_en_cazuela_de_barro.jpg",
           title: "Fabada",
           kind: "Legumbre",
-          description: `<span class=text--primary>blah, blah</span>`,
+          description: "blah, blah",
         },
       ],
     };
   },
 };
 </script>
+<style>
+.v-speed-dial--direction-top {
+  width: inherit !important;
+}
+</style>

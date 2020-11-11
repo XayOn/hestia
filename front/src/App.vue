@@ -23,7 +23,7 @@
       <v-list dense>
         <v-list-item
           v-for="item in items"
-          v-on:click="selected = item.value"
+          v-on:click="mini=true; selected = item.value"
           :key="item.title"
           link
         >
@@ -38,14 +38,18 @@
       </v-list>
     </v-navigation-drawer>
     <v-main>
+      <dashboard v-if="selected == 'home'"></dashboard>
       <recipes v-if="selected == 'recipes'"></recipes>
       <calendar v-if="selected == 'calendar'"></calendar>
+      <tasks v-if="selected == 'tasks'"></tasks>
     </v-main>
   </v-app>
 </template>
 
 <script>
 import Calendar from "./components/Calendar.vue";
+import Dashboard from "./components/Dashboard.vue";
+import Tasks from "./components/Tasks.vue";
 import Recipes from "./components/Recipes.vue";
 
 export default {
@@ -54,6 +58,8 @@ export default {
   components: {
     calendar: Calendar,
     recipes: Recipes,
+    dashboard: Dashboard,
+    tasks: Tasks
   },
   methods: {
     select: () => {
