@@ -56,7 +56,7 @@
                   color="pink"
                   dark
                   absolute
-                  top
+                  bottom
                   right
                   fab
                 >
@@ -204,62 +204,98 @@
             <v-timeline-item
               v-for="(step, i) in selected.steps"
               :key="i"
-              color="lightgreen"
-              small
+              color="purple"
+              icon="mdi-chef-hat"
               class="mx-15"
+              fill-dot
             >
               <template v-slot:opposite>
-                <span
-                  v-if="i != selectedAlarm"
-                  :class="
-                    `headline font-weight-bold lightgreen--text` +
-                    (i !== selectedStep)
-                      ? 'text--disabled'
-                      : ''
-                  "
-                  v-text="step.time + `m`"
-                ></span>
+                <v-row>
+                  <v-col cols="5">
+                    <span
+                      v-if="!edit && i != selectedAlarm"
+                      :class="
+                        `headline font-weight-bold lightgreen--text` +
+                        (i !== selectedStep)
+                          ? 'text--disabled'
+                          : ''
+                      "
+                      v-text="step.time + `m`"
+                    ></span>
 
-                <v-progress-circular
-                  v-if="i == selectedAlarm"
-                  :size="80"
-                  :rotate="180"
-                  :width="8"
-                  class="mx-5"
-                  color="purple"
-                  :value="currentTimer"
-                  >{{ step.time }}m</v-progress-circular
-                >
-
-                <v-tooltip
-                  v-if="i != selectedAlarm && i == selectedStep"
-                  bottom
-                >
-                  <template v-slot:activator="{ on, attrs }">
-                    <v-btn
-                      class="mx-5"
-                      fab
-                      color="light-green"
-                      small
-                      v-bind="attrs"
-                      v-on="on"
-                    >
-                      <v-icon
-                        dark
-                        v-on:click="
-                          selectedAlarm = selectedStep;
-                          startTimer();
-                        "
+                    <span v-if="edit">
+                      <v-text-field
+                        v-model="step.time"
+                        clearable
+                        label="Time"
+                        type="text"
                       >
-                        mdi-alarm-plus
-                      </v-icon>
-                    </v-btn>
-                  </template>
-                  <span>Start timer</span>
-                </v-tooltip>
+                      </v-text-field>
+                    </span>
+                  </v-col>
+
+                  <v-col cols="2">
+                    <v-progress-circular
+                      v-if="!edit && i == selectedAlarm"
+                      :size="80"
+                      :rotate="180"
+                      :width="8"
+                      class="mx-5"
+                      color="purple"
+                      :value="currentTimer"
+                    >
+                      {{ step.time }}m
+                    </v-progress-circular>
+
+                    <v-tooltip
+                      v-if="!edit && i != selectedAlarm && i == selectedStep"
+                      bottom
+                    >
+                      <template v-slot:activator="{ on, attrs }">
+                        <v-btn
+                          class="mx-5"
+                          fab
+                          color="light-green"
+                          small
+                          v-bind="attrs"
+                          v-on="on"
+                        >
+                          <v-icon
+                            dark
+                            v-on:click="
+                              selectedAlarm = selectedStep;
+                              startTimer();
+                            "
+                          >
+                            mdi-alarm-plus
+                          </v-icon>
+                        </v-btn>
+                      </template>
+                      <span>Start timer</span>
+                    </v-tooltip>
+                  </v-col>
+                </v-row>
               </template>
 
-              <div class="py-4">
+              <div v-if="edit" class="py-4">
+                <v-text-field
+                  v-model="step.name"
+                  clearable
+                  label="Step name"
+                  type="text"
+                >
+                </v-text-field>
+
+                <v-textarea
+                  v-model="step.description"
+                  clearable
+                  label="Step description"
+                  type="text"
+                >
+                </v-textarea>
+              </div>
+
+              <div v-if="!edit" class="py-4">
                 <h2
                   :class="
                     i !== selectedStep
@@ -289,18 +325,35 @@
                   "
                 >
                   <v-btn class="" fab dark small color="teal">
-                    <v-icon dark> mdi-chevron-right </v-icon>
+                    <v-icon dark> mdi-step-forward </v-icon>
                   </v-btn>
                 </v-col>
               </div>
             </v-timeline-item>
+
+            <v-btn
+              color="pink"
+              class="float-center"
+              float-center
+              v-if="edit"
+              :style="{ left: '50%', transform: 'translateX(-50%)' }"
+              v-on:click="addStep()"
+              fab
+              large
+              dark
+            >
+              <v-icon>mdi-plus</v-icon>
+            </v-btn>
           </v-timeline>
-          <div v-if="selected & !edit">
-            <v-card-title>Next scheduled meals</v-card-title>
-            <v-card-text :key="date.date" v-for="date in selected.scheduled">
+
+          <div v-if="selected && !edit">
+            <v-divider></v-divider>
+            <v-card-title class=justify-center>Next scheduled meals</v-card-title>
+            <v-card-text class=text-center :key="date.date" v-for="date in selected.scheduled">
               <v-chip v-text="date.date"></v-chip>
             </v-card-text>
           </div>
+
           <v-row v-if="edit" style="margin-top: 20px; margin-bottom: -45px">
             <v-col cols="2" offset="5">
               <v-btn class="mx-3" v-on:click="save()" color="primary">
@@ -380,14 +433,21 @@ export default {
 
   methods: {
     save: function () {
-      console.log(this.selected);
       this.edit = false;
     },
     changeIngredientImage: function (num) {
-      console.log(this.selected.ingredients[num]);
+      const ing = this.selected.ingredients[num];
       if (!this.edit) {
         return;
       }
+      return ing
+    },
+    addStep: function () {
+      this.selected.steps.push({
+        name: "",
+        description: "",
+        time: "",
+      });
     },
     addIngredient: function () {
       this.selected.ingredients.push({
@@ -405,7 +465,6 @@ export default {
       }
     },
     updateTimer: function () {
-      console.log(this.currentTimer);
       if (this.currentTimer < 100) {
         this.currentTimer = Math.round(this.currentTimer + this.currentStep);
         this.selected.steps[this.selectedAlarm].time -= 1;
@@ -482,22 +541,6 @@ export default {
               time: "10",
             },
           ],
-        },
-        {
-          id: 1,
-          image:
-            "https://upload.wikimedia.org/wikipedia/commons/thumb/7/77/Fabada_en_cazuela_de_barro.jpg/1200px-Fabada_en_cazuela_de_barro.jpg",
-          title: "Fabada",
-          kind: "Legumbre",
-          description: "blah, blah",
-        },
-        {
-          id: 2,
-          image:
-            "https://upload.wikimedia.org/wikipedia/commons/thumb/7/77/Fabada_en_cazuela_de_barro.jpg/1200px-Fabada_en_cazuela_de_barro.jpg",
-          title: "Fabada",
-          kind: "Legumbre",
-          description: "blah, blah",
         },
       ],
     };
