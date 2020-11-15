@@ -9,14 +9,14 @@
       <v-col cols="4">
         <v-card class="mx-auto" tile>
           <v-list three-line>
-            <template v-for="(item, position) in recipes">
-              <v-list-item v-on:click="selectRecipe(position)" :key="position">
+            <template v-for="item in recipe">
+              <v-list-item v-on:click="selectRecipe(item.id)" :key="item.id">
                 <v-list-item-avatar>
                   <v-img :src="item.image"></v-img>
                 </v-list-item-avatar>
                 <v-list-item-content>
                   <v-list-item-title
-                    ><span v-html="item.title"></span> &mdash;
+                    ><span v-html="item.name"></span> &mdash;
                     <span
                       class="text--secondary text-overline"
                       v-html="item.kind"
@@ -35,11 +35,11 @@
       <v-col cols="8">
         <v-card class="mx-auto" v-if="selected">
           <v-img height="250" :src="selected.image"></v-img>
-          <v-card-title v-if="!edit" v-html="selected.title"></v-card-title>
+          <v-card-title v-if="!edit" v-html="selected.name"></v-card-title>
 
           <v-card-title v-if="edit">
             <v-text-field
-              v-model="selected.title"
+              v-model="selected.name"
               outlined
               clearable
               label="Title"
@@ -65,34 +65,34 @@
               </v-fab-transition>
               <v-list class="mx-15" three-line>
                 <v-subheader>Ingredients</v-subheader>
-                <template v-for="(item, num) in selected.ingredients">
-                  <v-list-item :key="num">
+                <template v-for="item in selected.ingredient_recipes">
+                  <v-list-item :key="item.Ingredient.id">
                     <v-list-item-avatar>
                       <v-img
-                        :src="item.image"
-                        v-on:click="changeIngredientImage(num)"
+                        :src="item.Ingredient.image"
+                        v-on:click="changeIngredientImage(item.Ingredient.id)"
                       ></v-img>
                     </v-list-item-avatar>
 
                     <v-list-item-content v-if="!edit">
                       <v-list-item-title>
-                        <span v-html="item.name"></span>
+                        <span v-html="item.Ingredient.name"></span>
 
                         &mdash;
 
                         <span
                           class="text--secondary text-overline"
-                          v-html="item.quantity"
+                          v-html="item.Ingredient.quantity"
                         ></span>
 
                         <span
                           class="text--secondary text-overline"
-                          v-html="item.unit"
+                          v-html="item.Ingredient.unit"
                         ></span>
                       </v-list-item-title>
 
                       <v-list-item-subtitle
-                        v-html="item.description"
+                        v-html="item.Ingredient.description"
                       ></v-list-item-subtitle>
                     </v-list-item-content>
 
@@ -102,7 +102,7 @@
                           <v-col cols="6">
                             <v-text-field
                               v-if="edit"
-                              v-model="item.name"
+                              v-model="item.Ingredient.name"
                               label="Name"
                             >
                             </v-text-field>
@@ -112,7 +112,7 @@
                           <v-col cols="6">
                             <v-text-field
                               v-if="edit"
-                              v-model="item.quantity"
+                              v-model="item.Ingredient.quantity"
                               color="blue darken-2"
                               label="Quantity"
                             >
@@ -122,7 +122,7 @@
                           <v-col cols="6">
                             <v-text-field
                               v-if="edit"
-                              v-model="item.unit"
+                              v-model="item.Ingredient.unit"
                               label="Unit name"
                             >
                             </v-text-field>
@@ -133,7 +133,7 @@
                           <v-col cols="12">
                             <v-text-field
                               v-if="edit"
-                              v-model="item.description"
+                              v-model="item.Ingredient.description"
                               label="Description"
                             >
                             </v-text-field>
@@ -346,10 +346,16 @@
             </v-btn>
           </v-timeline>
 
-          <div v-if="selected && !edit">
+          <div v-if="selected && !edit && selected.scheduled">
             <v-divider></v-divider>
-            <v-card-title class=justify-center>Next scheduled meals</v-card-title>
-            <v-card-text class=text-center :key="date.date" v-for="date in selected.scheduled">
+            <v-card-title class="justify-center">
+              Next scheduled meals
+            </v-card-title>
+            <v-card-text
+              class="text-center"
+              :key="date.date"
+              v-for="date in selected.scheduled"
+            >
               <v-chip v-text="date.date"></v-chip>
             </v-card-text>
           </div>
@@ -419,6 +425,8 @@
 </template>
 
 <script>
+import gql from "graphql-tag";
+
 export default {
   name: "Recipes",
   computed: {
@@ -434,13 +442,43 @@ export default {
   methods: {
     save: function () {
       this.edit = false;
+      this.$apollo.mutate({
+        mutation: gql`
+          mutation MyMutation(
+            $id: Int
+            $kind: Int
+            $description: String
+            $name: String
+            $total_time: String
+          ) {
+            update_recipe(
+              where: { id: { _eq: $id } }
+              _set: {
+                kind: $kind
+                description: $description
+                name: $name
+                total_time: $total_time
+              }
+            ) {
+              affected_rows
+            }
+          }
+        `,
+        variables: {
+          id: this.selected.id,
+          kind: this.selected.kind,
+          description: this.selected.description,
+          name: this.selected.name,
+          total_time: this.selected.total_time,
+        },
+      });
     },
     changeIngredientImage: function (num) {
-      const ing = this.selected.ingredients[num];
+      const ing = this.selected.ingredients.find((x) => x.id == num);
       if (!this.edit) {
         return;
       }
-      return ing
+      return ing;
     },
     addStep: function () {
       this.selected.steps.push({
@@ -458,8 +496,8 @@ export default {
         image: "",
       });
     },
-    selectRecipe: function (position, edit) {
-      this.selected = this.recipes[position];
+    selectRecipe: function (id, edit) {
+      this.selected = this.recipe.find((x) => x.id == id);
       if (edit) {
         this.edit = true;
       }
@@ -484,7 +522,33 @@ export default {
       this.selected.ingredients.splice(ingredient, 1);
     },
   },
-
+  apollo: {
+    recipe: gql`
+      query GetAllRecipes {
+        recipe {
+          description
+          id
+          name
+          kind
+          total_time
+          steps {
+            name
+            description
+            id
+          }
+          ingredient_recipes {
+            Ingredient {
+              description
+              image
+              name
+              unit
+              quantity
+            }
+          }
+        }
+      }
+    `,
+  },
   data: () => {
     return {
       sheet: false,
@@ -496,49 +560,31 @@ export default {
       currentTimer: 0,
       selectedStep: 0,
       selected: null,
-      recipes: [
+      recipe: [
         {
           id: 0,
-          image:
-            "https://upload.wikimedia.org/wikipedia/commons/thumb/7/77/Fabada_en_cazuela_de_barro.jpg/1200px-Fabada_en_cazuela_de_barro.jpg",
-          title: "Fabada",
-          kind: "Legumbre",
-          description: `Receta sencilla de fabada asturiana.`,
-          scheduled: [{ date: "2020-01-01 15:00" }],
-          total_time: "10m",
+          image: "",
+          name: "",
+          kind: "",
+          description: "",
+          scheduled: [],
+          total_time: "",
           ingredients: [
             {
-              name: "Alubias",
-              kind: "Legumbres",
-              description: "Alubias asturianas",
-              quantity: "200",
-              unit: "gramos",
-              stock: true,
-              image:
-                "https://upload.wikimedia.org/wikipedia/commons/thumb/4/45/Cocina_Palentina_-_Alubias_de_Salda%C3%B1a_001.JPG/1200px-Cocina_Palentina_-_Alubias_de_Salda%C3%B1a_001.JPG",
-            },
-            {
-              name: "Chorizo",
-              kind: "Embutidos",
-              description: "Chorizo de leon",
-              quantity: "50",
-              unit: "gramos",
+              name: "",
+              kind: "",
+              description: "",
+              quantity: "",
+              unit: "",
               stock: false,
-              image:
-                "https://upload.wikimedia.org/wikipedia/commons/f/f1/Aspecto_al_corte_del_Chorizo_de_Le%C3%B3n.jpg",
+              image: "",
             },
           ],
           steps: [
             {
-              name: "Poner a remojo las alubias",
-              description:
-                "En un cazo grande, dejamos las alubias a remojo toda la noche, en acido de baterias o grog.",
-              time: "120",
-            },
-            {
-              name: "Ordeñar el chorizo",
-              description: "Claramente, se ordeña el chorizo, nada raro aqui",
-              time: "10",
+              name: "",
+              description: "",
+              time: "",
             },
           ],
         },

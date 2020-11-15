@@ -10,7 +10,6 @@
         <v-list subheader two-line flat>
           <v-list-item v-for="item in tasks" :key="item.id">
             <template>
-
               <v-list-item-action>
                 <v-checkbox
                   v-model="item.complete"
@@ -23,18 +22,18 @@
               >
                 <v-list-item-title v-html="item.task"></v-list-item-title>
               </v-list-item-content>
-		
+
               <v-list-item-content v-if="item.repeat">
-                <v-list-item-title v-html="'Repeats every ' + item.repeat"></v-list-item-title>
-              </v-list-item-content>
-	
-              <v-list-item-content v-if="item.repeat">
-                <v-list-item-title v-html="'Due on tuesday'"></v-list-item-title>
+                <v-list-item-title
+                  v-html="'Repeats every ' + item.repeat"
+                ></v-list-item-title>
               </v-list-item-content>
 
-
-
-
+              <v-list-item-content v-if="item.repeat">
+                <v-list-item-title
+                  v-html="'Due on tuesday'"
+                ></v-list-item-title>
+              </v-list-item-content>
             </template>
           </v-list-item>
         </v-list>

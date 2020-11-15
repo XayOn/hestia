@@ -23,7 +23,10 @@
       <v-list dense>
         <v-list-item
           v-for="item in items"
-          v-on:click="mini=true; selected = item.value"
+          v-on:click="
+            mini = true;
+            selected = item.value;
+          "
           :key="item.title"
           link
         >
@@ -59,7 +62,7 @@ export default {
     calendar: Calendar,
     recipes: Recipes,
     dashboard: Dashboard,
-    tasks: Tasks
+    tasks: Tasks,
   },
   methods: {
     select: () => {
